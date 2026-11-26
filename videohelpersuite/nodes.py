@@ -611,10 +611,14 @@ class VideoCombine:
                             + e.stderr.decode(*ENCODE_ARGS))
                 if res.stderr:
                     print(res.stderr.decode(*ENCODE_ARGS), end="", file=sys.stderr)
-                output_files.append(output_file_with_audio_path)
-                #Return this file with audio to the webui.
-                #It will be muted unless opened or saved with right click
-                file = output_file_with_audio
+                # LAURI-PATCH: the muxed audio file is the single output.
+                # The video-only file was losslessly copied into it via -c:v copy,
+                # so drop it and rename the muxed file to the original clean name.
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                os.replace(output_file_with_audio_path, file_path)
+                output_files[:] = [file_path]
+                file = os.path.basename(file_path)
         if extra_options.get('VHS_KeepIntermediate', True) == False:
             for intermediate in output_files[1:-1]:
                 if os.path.exists(intermediate):
